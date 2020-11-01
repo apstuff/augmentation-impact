@@ -1,6 +1,6 @@
 # Data Augmentation Impact
 
-The goal of this project is to provide a tool to analyse the impact of data augmentation on the network activation. The input data type will be images and the output a categorical classification. The outcome of the project should be a GUI with some widgets to continually control different augmentation methods. For every step in the augmentation a localization map is computed which highlights the import regions in the picture which leaded to the actual prediction. The pictures will then be concatenated to a gif to quickly express the change of activation during the data augmentation. 
+The goal of this project is to provide a tool to analyse the impact of data augmentation on the network activation. The input data type will be images and the output a categorical classification. The outcome of the project should be a GUI with some widgets to continually control different augmentation methods. For every step in the augmentation a localization map is computed which highlights the important regions in the picture which leaded to the actual prediction. The pictures will then be concatenated to a gif to quickly express the change of activation during the data augmentation. 
 
 The final tool can be used to understand the impact of an augmentation method on your model. 
 
