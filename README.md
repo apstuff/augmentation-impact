@@ -15,7 +15,7 @@ The final tool can be used to understand the impact of an augmentation method on
 
 ### Project plan:
 - Project setup: Get the dataset and the pretrained model. Test the model on the data. Estimated time: 1 day
-- Try and choose some augmentation methods and generated gif from the continuously augmented input. Estimated time: 1 day
+- Try and choose some augmentation methods and generate gif from the continuously augmented input. Estimated time: 1 day
 - Read the Grad-Cam[2] paper and implement it (or integrate existing implementation). Estimated time: 3-6 days
 - Add GUI to control data augmentation, calculate localiziation map per image and save in gif. 3-5 days
 - Final report and presentation preparation: 3-5 days
