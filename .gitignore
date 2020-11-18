@@ -2,6 +2,8 @@
 data/*
 mlruns/
 /logs/
+notebooks_local/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
