@@ -26,6 +26,15 @@ Sum of days: 11-18
 - [1] [Shorten, Connor, and Taghi M. Khoshgoftaar. "A survey on image data augmentation for deep learning." Journal of Big Data 6.1 (2019): 60.](https://link.springer.com/article/10.1186/s40537-019-0197-0)
 - [2] [Selvaraju, R. R., et al. "Grad-CAM: visual explanations from deep networks via gradient-based localization. arXiv website. arxiv. org/abs/1610.02391." Revised March 21 (2016).](https://arxiv.org/pdf/1610.02391.pdf)
 
+## Current State:
+- Basic GUI with jupyter widgets
+- Center crop and brightness transformations
+- last layer activation visualization
+- Voilá for app generation
+
+Example:
+
+![SegmentLocal](imgs/test2.gif "example")
 
 ```python
 
