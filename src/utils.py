@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 from PIL import Image as pilImage
-from fastai.vision.core import PILImage
+#from fastai.vision.core import PILImage
 
 #def np_to_tensor(array):
 #    return torch.Tensor(array).permute(2,0,1).float()
@@ -23,7 +23,7 @@ def arr_to_img(img, cmap=None):
     if cmap is not None:
         cm = plt.get_cmap(cmap)
         img = cm(img)[:,:,:3]
-    return PILImage.create((min_max_scaler(img)*255).astype('uint8'))
+    return pilImage.fromarray((min_max_scaler(img)*255).astype('uint8'))
 
 # # Show linear layer activation function
 # def show_1D_act(act):
