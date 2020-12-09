@@ -9,7 +9,7 @@ from fastai.vision.core import PILImage
 #    return torch.Tensor(array).permute(2,0,1).float()
 #def img_to_tensor(img):
 #    return transforms.ToTensor()(img)
-def tensor_to_img(img):
+def tensor_to_np_img(img):
     return (img.permute(1,2,0).numpy()*255.).astype('uint8')
 
 def imresize(arr, sz):
