@@ -28,13 +28,14 @@ Sum of days: 11-18
 
 ## Current State:
 - Basic GUI with jupyter widgets
-- Center crop and brightness transformations
+- Augmentation transformations: Center crop, brightness adjustment, rotation, perspective distortion, erasing box
 - last layer activation visualization
+- cam, gradient and gradcam for activation localization visualization
 - Voilá for app generation
 
-Example:
+Rotation Example:
 
-![SegmentLocal](imgs/test2.gif "example")
+![SegmentLocal](imgs/rotation_example.gif "example")
 
 ```python
 
