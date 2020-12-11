@@ -57,6 +57,7 @@ Sum of days: 11-18
 
 #### Model failure because of sharp edges
 In the following example you can see that with the addition of some sharp black regions we can transform a dog into a church
+
 ![SegmentLocal](imgs/dog_to_church.gif "dog_to_church")
 
 
