@@ -34,8 +34,15 @@ Sum of days: 11-18
 - Voilá for app generation
 
 Rotation Example:
+![SegmentLocal](imgs/rotation_example.gif "rotation_example")
 
-![SegmentLocal](imgs/rotation_example.gif "example")
+Erase Box Example
+![SegmentLocal](imgs/erase_example_1.gif "erase_example_1")
+![SegmentLocal](imgs/erase_example_2.gif "erase_example_2")
+
+Model failure with combination of roataion and erase box
+![SegmentLocal](imgs/erase_rotation_example_1.gif "erase_rotation_example_1")
+
 
 ```python
 

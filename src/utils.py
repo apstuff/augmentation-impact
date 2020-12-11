@@ -10,7 +10,7 @@ from PIL import Image as pilImage
 #def img_to_tensor(img):
 #    return transforms.ToTensor()(img)
 def tensor_to_np_img(img):
-    return (img.permute(1,2,0).numpy()*255.).astype('uint8')
+    return (img.permute(1,2,0).cpu().numpy()*255.).astype('uint8')
 
 def imresize(arr, sz):
     height, width = sz
