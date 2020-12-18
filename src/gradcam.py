@@ -1,4 +1,6 @@
-""" from https://github.com/jacobgil/pytorch-grad-cam with sligth modifications to use only PIL and not opencv"""
+""" from https://github.com/jacobgil/pytorch-grad-cam with sligth modifications to use only PIL (and not opencv)
+    I Also refactored the guided backpropagation code a bit to be easier understandable.
+"""
 #import cv2
 import numpy as np
 import torch
@@ -115,22 +117,15 @@ class GuidedBackpropReLU(Function):
     @staticmethod
     def forward(self, input):
         positive_mask = (input > 0).type_as(input)
-        output = torch.addcmul(torch.zeros(input.size()).type_as(input), input, positive_mask)
-        self.save_for_backward(input, output)
+        output = input * positive_mask
+        self.save_for_backward(positive_mask)
         return output
 
     @staticmethod
     def backward(self, grad_output):
-        input, output = self.saved_tensors
-        grad_input = None
-
-        positive_mask_1 = (input > 0).type_as(grad_output)
+        positive_mask_1 = self.saved_tensors[0]
         positive_mask_2 = (grad_output > 0).type_as(grad_output)
-        grad_input = torch.addcmul(torch.zeros(input.size()).type_as(input),
-                                   torch.addcmul(torch.zeros(input.size()).type_as(input), grad_output,
-                                                 positive_mask_1), positive_mask_2)
-
-        return grad_input
+        return grad_output * positive_mask_1 * positive_mask_2
 
 
 class GuidedBackpropReLUModel:
