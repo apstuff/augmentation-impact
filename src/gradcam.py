@@ -60,34 +60,25 @@ class ModelOutputs():
 
 class GradCam:
     def __init__(self, model, feature_module, target_layer_names, use_cuda):
-        self.model = model
-        self.feature_module = feature_module
-        self.model.eval()
         self.cuda = use_cuda
-        if self.cuda:
-            self.model = model.cuda()
-
+        self.model = model.cuda if self.cuda else model
+        self.model.eval()
+        self.feature_module = feature_module
         self.extractor = ModelOutputs(self.model, self.feature_module, target_layer_names)
 
     def forward(self, input):
         return self.model(input)
 
     def __call__(self, input, index=None):
-        if self.cuda:
-            features, output = self.extractor(input.cuda())
-        else:
-            features, output = self.extractor(input)
+        features, output = self.extractor(input.cuda()) if self.cuda else self.extractor(input)
 
-        if index == None:
+        if index is None:
             index = np.argmax(output.cpu().data.numpy())
 
         one_hot = np.zeros((1, output.size()[-1]), dtype=np.float32)
         one_hot[0][index] = 1
         one_hot = torch.from_numpy(one_hot).requires_grad_(True)
-        if self.cuda:
-            one_hot = torch.sum(one_hot.cuda() * output)
-        else:
-            one_hot = torch.sum(one_hot * output)
+        one_hot = torch.sum(one_hot.cuda() * output) if self.cuda else torch.sum(one_hot * output)
 
         self.feature_module.zero_grad()
         self.model.zero_grad()
@@ -105,7 +96,6 @@ class GradCam:
             cam += w * target[i, :, :]
 
         cam = np.maximum(cam, 0)
-        #cam = cv2.resize(cam, input.shape[2:])
         cam = imresize(cam, input.shape[2:])
         cam = cam - np.min(cam)
         cam = cam / np.max(cam)
