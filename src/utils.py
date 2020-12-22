@@ -20,10 +20,14 @@ def min_max_scaler(x):
     return (x-x.min())/(x.max()-x.min())
 
 def arr_to_img(img, cmap=None):
-    if cmap is not None:
-        cm = plt.get_cmap(cmap)
-        img = cm(img)[:,:,:3]
-    return pilImage.fromarray((min_max_scaler(img)*255).astype('uint8'))
+    if type(img) == pilImage.Image:
+        pass
+    else:
+        if cmap is not None:
+            cm = plt.get_cmap(cmap)
+            img = cm(img)[:,:,:3]
+        img = pilImage.fromarray((min_max_scaler(img)*255).astype('uint8'))
+    return img
 
 # # Show linear layer activation function
 # def show_1D_act(act):
