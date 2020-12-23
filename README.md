@@ -41,7 +41,8 @@ Sum of days: 11-18
 - Basic GUI with jupyter widgets
 - Augmentation transformations: Center crop, brightness adjustment, rotation, perspective distortion, erasing box
 - last layer activation visualization
-- cam, gradient and gradcam for activation localization visualization. The original gradcam implementation was taken from [3]
+- The modes gradcam, guided gradient and guided-gradcam are available for activation localization visualization. 
+  The original guided-gradcam implementation was taken from [3] but almost entirely rewritten.
 - Voilá for app generation
 
 
