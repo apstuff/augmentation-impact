@@ -152,7 +152,7 @@ class AugmentationImpactAnalyzer():
 
         if self.add_output_act:
             # to make flatten activation better visible, the images will be streched by a factor of 20 and the width is adapted to the original image width
-            w, h, d = self.images[0].shape
+            w, h = self.images[0].shape
             transform_act = lambda x: arr_to_img(imresize(x, (20, w)), 'inferno')
             # combine sequence of transformed images and their layer activations
             imgs_combs = [np.vstack([arr_to_img(img).resize((w, h)), transform_act(act)]) for img, act in
