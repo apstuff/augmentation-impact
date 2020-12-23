@@ -1,14 +1,10 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-import os
 from PIL import Image as pilImage
-#from fastai.vision.core import PILImage
 
 #def np_to_tensor(array):
 #    return torch.Tensor(array).permute(2,0,1).float()
-#def img_to_tensor(img):
-#    return transforms.ToTensor()(img)
+
 def tensor_to_np_img(img):
     return (img.permute(1,2,0).cpu().numpy()*255.).astype('uint8')
 
@@ -17,7 +13,7 @@ def imresize(arr, sz):
     return np.array(arr_to_img(arr).resize((width, height), resample=pilImage.BILINEAR))
 
 def min_max_scaler(x): 
-    return (x-x.min())/(x.max()-x.min())
+    return (x-x.min())/(x.max()-x.min()+1e-8)
 
 def arr_to_img(img, cmap=None):
     if type(img) == pilImage.Image:

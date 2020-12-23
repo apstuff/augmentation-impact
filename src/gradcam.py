@@ -130,7 +130,7 @@ class GuidedGradCam:
         self.grad_cam = GradCam(model, target_type, layer_ids)
         self.gb_model = GuidedBackpropReLUModel(model=copy(deepcopy(model)), use_cuda=use_cuda)
 
-    def find_relevant_input(self, x, target_index=None):
+    def __call__(self, x, target_index=None):
         '''Function to compute grad-cam, returns also cam heatmap and plain backwards-gradient
            If target_index is None, returns the map for the highest scoring category.
            Otherwise, targets the requested index.'''
