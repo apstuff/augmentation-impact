@@ -1,152 +1,40 @@
-""" from https://github.com/jacobgil/pytorch-grad-cam with sligth modifications to use only PIL and not opencv"""
-#import cv2
-import numpy as np
+""" Original from https://github.com/jacobgil/pytorch-grad-cam but almost completely rewritten
+"""
 import torch
+from torch import nn
 from torch.autograd import Function
-from torchvision import models
 from src.utils import *
-
-class FeatureExtractor():
-    """ Class for extracting activations and 
-    registering gradients from targetted intermediate layers """
-
-    def __init__(self, model, target_layers):
-        self.model = model
-        self.target_layers = target_layers
-        self.gradients = []
-
-    def save_gradient(self, grad):
-        self.gradients.append(grad)
-
-    def __call__(self, x):
-        outputs = []
-        self.gradients = []
-        for name, module in self.model._modules.items():
-            x = module(x)
-            if name in self.target_layers:
-                x.register_hook(self.save_gradient)
-                outputs += [x]
-        return outputs, x
-
-
-class ModelOutputs():
-    """ Class for making a forward pass, and getting:
-    1. The network output.
-    2. Activations from intermeddiate targetted layers.
-    3. Gradients from intermeddiate targetted layers. """
-
-    def __init__(self, model, feature_module, target_layers):
-        self.model = model
-        self.feature_module = feature_module
-        self.feature_extractor = FeatureExtractor(self.feature_module, target_layers)
-
-    def get_gradients(self):
-        return self.feature_extractor.gradients
-
-    def __call__(self, x):
-        target_activations = []
-        for name, module in self.model._modules.items():
-            if module == self.feature_module:
-                target_activations, x = self.feature_extractor(x)
-            elif "avgpool" in name.lower():
-                x = module(x)
-                x = x.view(x.size(0),-1)
-            else:
-                x = module(x)
-        
-        return target_activations, x
-
-class GradCam:
-    def __init__(self, model, feature_module, target_layer_names, use_cuda):
-        self.model = model
-        self.feature_module = feature_module
-        self.model.eval()
-        self.cuda = use_cuda
-        if self.cuda:
-            self.model = model.cuda()
-
-        self.extractor = ModelOutputs(self.model, self.feature_module, target_layer_names)
-
-    def forward(self, input):
-        return self.model(input)
-
-    def __call__(self, input, index=None):
-        if self.cuda:
-            features, output = self.extractor(input.cuda())
-        else:
-            features, output = self.extractor(input)
-
-        if index == None:
-            index = np.argmax(output.cpu().data.numpy())
-
-        one_hot = np.zeros((1, output.size()[-1]), dtype=np.float32)
-        one_hot[0][index] = 1
-        one_hot = torch.from_numpy(one_hot).requires_grad_(True)
-        if self.cuda:
-            one_hot = torch.sum(one_hot.cuda() * output)
-        else:
-            one_hot = torch.sum(one_hot * output)
-
-        self.feature_module.zero_grad()
-        self.model.zero_grad()
-        one_hot.backward(retain_graph=True)
-
-        grads_val = self.extractor.get_gradients()[-1].cpu().data.numpy()
-
-        target = features[-1]
-        target = target.cpu().data.numpy()[0, :]
-
-        weights = np.mean(grads_val, axis=(2, 3))[0, :]
-        cam = np.zeros(target.shape[1:], dtype=np.float32)
-
-        for i, w in enumerate(weights):
-            cam += w * target[i, :, :]
-
-        cam = np.maximum(cam, 0)
-        #cam = cv2.resize(cam, input.shape[2:])
-        cam = imresize(cam, input.shape[2:])
-        cam = cam - np.min(cam)
-        cam = cam / np.max(cam)
-        return cam
-
+import copy
+from copy import copy, deepcopy
 
 class GuidedBackpropReLU(Function):
 
     @staticmethod
     def forward(self, input):
         positive_mask = (input > 0).type_as(input)
-        output = torch.addcmul(torch.zeros(input.size()).type_as(input), input, positive_mask)
-        self.save_for_backward(input, output)
+        output = input * positive_mask
+        self.save_for_backward(positive_mask)
         return output
 
     @staticmethod
     def backward(self, grad_output):
-        input, output = self.saved_tensors
-        grad_input = None
-
-        positive_mask_1 = (input > 0).type_as(grad_output)
+        positive_mask_1 = self.saved_tensors[0]
         positive_mask_2 = (grad_output > 0).type_as(grad_output)
-        grad_input = torch.addcmul(torch.zeros(input.size()).type_as(input),
-                                   torch.addcmul(torch.zeros(input.size()).type_as(input), grad_output,
-                                                 positive_mask_1), positive_mask_2)
-
-        return grad_input
+        return grad_output * positive_mask_1 * positive_mask_2
 
 
 class GuidedBackpropReLUModel:
     def __init__(self, model, use_cuda):
-        self.model = model
-        self.model.eval()
         self.cuda = use_cuda
-        if self.cuda:
-            self.model = model.cuda()
+        self.model = model.cuda() if self.cuda else model
+        self.model.eval()
 
         def recursive_relu_apply(module_top):
             for idx, module in module_top._modules.items():
                 recursive_relu_apply(module)
                 if module.__class__.__name__ == 'ReLU':
                     module_top._modules[idx] = GuidedBackpropReLU.apply
-                
+
         # replace ReLU with GuidedBackpropReLU
         recursive_relu_apply(self.model)
 
@@ -154,30 +42,108 @@ class GuidedBackpropReLUModel:
         return self.model(input)
 
     def __call__(self, input, index=None):
-        if self.cuda:
-            output = self.forward(input.cuda())
-        else:
-            output = self.forward(input)
+        output = self.forward(input.cuda()) if self.cuda else self.forward(input)
 
-        if index == None:
+        if index is None:
             index = np.argmax(output.cpu().data.numpy())
 
-        one_hot = np.zeros((1, output.size()[-1]), dtype=np.float32)
-        one_hot[0][index] = 1
-        one_hot = torch.from_numpy(one_hot).requires_grad_(True)
-        if self.cuda:
-            one_hot = torch.sum(one_hot.cuda() * output)
+        output[0][index].backward(retain_graph=True)
+        return input.grad.cpu().data.numpy()[0]
+
+    def get_gradient_act(self, x, target_index=None):
+        gb = self(x, index=target_index)
+        return deprocess_image(gb.transpose((1, 2, 0)))
+
+class GradCam(nn.Module):
+    def __init__(self, model, target_type='classification', layer_ids=[], use_cuda=False):
+        super(GradCam, self).__init__()
+        self.target_type = target_type
+        self.cuda = use_cuda
+        self.model = model.cuda if self.cuda else model
+        self.model.eval()
+
+        self.collect_hooks = True
+        self.feature_activation = {}
+        self.gradients = {}
+        self.layer_ids = layer_ids
+        print('register hooks for:')
+        for name, module in dict([*self.model.named_modules()]).items():
+            if name in layer_ids:
+                print(name)
+                module.register_forward_hook(self.save_activation(name))
+                module.register_backward_hook(self.save_gradient(name))
+
+    def save_gradient(self, layer_id):
+        def fn(_, __, grad):
+            if self.collect_hooks:
+                self.gradients[layer_id] = grad[0]
+            else:
+                self.gradients[layer_id] = torch.empty(0)
+        return fn
+
+    def save_activation(self, layer_id):
+        def fn(_, __, output):
+            if self.collect_hooks:
+                self.feature_activation[layer_id] = output
+            else:
+                self.feature_activation[layer_id] = torch.empty(0)
+
+        return fn
+
+    def __call__(self, input, index=None, feature_layer=None):
+        feature_layer = self.layer_ids[0] if feature_layer is None else feature_layer
+        output = self.model(input.cuda()) if self.cuda else self.model(input)
+        feature_activation = self.feature_activation[feature_layer].cpu().data.numpy()[0,
+                             :]  # 0 because pytorch always wants batches
+        # temporary division between the 2 target types to easier develop the code
+        if self.target_type == 'classification':
+            if index is None:
+                index = np.argmax(output.cpu().data.numpy())
+            output = output[0][index]
+        elif self.target_type == 'regression':
+            pass
         else:
-            one_hot = torch.sum(one_hot * output)
+            assert 0, f'target_type {target_type} not known'
 
-        # self.model.features.zero_grad()
-        # self.model.classifier.zero_grad()
-        one_hot.backward(retain_graph=True)
+        output.backward(retain_graph=True)
+        grads_val = self.gradients[feature_layer].cpu().data.numpy()  # get the gradients for the target features
+        feature_impact = np.mean(grads_val, axis=(2, 3))[0, :]  # calculate average impact per feature
 
-        output = input.grad.cpu().data.numpy()
-        output = output[0, :, :, :]
+        cam = np.zeros(feature_activation.shape[1:], dtype=np.float32)
+        for i, w in enumerate(feature_impact):
+            cam += w * feature_activation[i, :, :]
 
-        return output
+        cam = np.maximum(cam, 0)
+        cam = imresize(cam, input.shape[2:])
+        cam = cam - np.min(cam)
+        cam = cam / np.max(cam)
+        return cam
+
+    def get_heatmap(self, x, target_index=None):
+        mask = self(x, target_index)
+        heatmap = arr_to_img(mask, cmap='inferno')
+        return heatmap
+
+
+class GuidedGradCam:
+    def __init__(self, model, use_cuda, target_type, layer_ids):
+        self.grad_cam = GradCam(model, target_type, layer_ids)
+        self.gb_model = GuidedBackpropReLUModel(model=copy(deepcopy(model)), use_cuda=use_cuda)
+
+    def __call__(self, x, target_index=None):
+        '''Function to compute grad-cam, returns also cam heatmap and plain backwards-gradient
+           If target_index is None, returns the map for the highest scoring category.
+           Otherwise, targets the requested index.'''
+        mask = self.grad_cam(x, target_index)
+        heatmap = arr_to_img(mask, cmap='inferno')
+
+        gb = self.gb_model(x, index=target_index)
+        gb = gb.transpose((1, 2, 0))
+
+        cam_mask = np.stack([mask, mask, mask], 2)
+        cam_gb = deprocess_image(cam_mask * gb)
+        gb = deprocess_image(gb)
+        return heatmap, gb, cam_gb
 
 def deprocess_image(img):
     """ see https://github.com/jacobgil/keras-grad-cam/blob/master/grad-cam.py#L65 """
