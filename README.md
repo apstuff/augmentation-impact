@@ -30,7 +30,7 @@ The final tool can be used to understand the impact of an augmentation method on
 ### Project Plan:
 - Project setup: Get the dataset and the pre-trained model. Test the model on the data. Estimated time: 1 day (used: 1 day)
 - Try and choose some augmentation methods and generate gif from the continuously augmented input. Estimated time: 1 day (used: 1 day)
-- Read the Grad-Cam[2] paper and implement it (or integrate existing implementation). Estimated time: 3-6 days (used: 2 days)
+- Read the Grad-Cam[2] paper and implement it (or integrate existing implementation). Estimated time: 3-6 days (used: 4 days)
 - Add GUI to control data augmentation, calculate localization map per image, and save in gif. 3-5 days (used: 3 days)
 - Final report and presentation preparation: 3-5 days
 
@@ -41,7 +41,8 @@ Sum of days: 11-18
 - Basic GUI with jupyter widgets
 - Augmentation transformations: Center crop, brightness adjustment, rotation, perspective distortion, erasing box
 - last layer activation visualization
-- cam, gradient and gradcam for activation localization visualization. The original gradcam implementation was taken from [3]
+- The modes gradcam, guided gradient and guided-gradcam are available for activation localization visualization. 
+  The original guided-gradcam implementation was taken from [3] but almost entirely rewritten.
 - Voilá for app generation
 
 
@@ -63,8 +64,6 @@ In the following example you can see that with the addition of some sharp black 
 
 ### Next Steps:
 - Add more documentation
-- Modify code to pass grad-cam models via argument. Then put notebook code into src.
-- Modify grad-cam to work with regression
 - Modify AugmentationImpactAnalyzer to work with Timeseries
 
 ### References:
