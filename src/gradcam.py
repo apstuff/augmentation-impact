@@ -103,7 +103,7 @@ class GradCam(nn.Module):
         elif self.target_type == 'regression':
             pass
         else:
-            assert 0, f'target_type {target_type} not known'
+            assert 0, f'target_type {self.target_type} not known'
 
         output.backward(retain_graph=True)
         grads_val = self.gradients[feature_layer].cpu().data.numpy()  # get the gradients for the target features
