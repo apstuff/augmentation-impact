@@ -4,9 +4,10 @@ from torchvision import transforms
 import torchvision.transforms.functional as TF
 from src.utils import *
 
+
 class AugmentationImpactAnalyzer():
     def __init__(self, img, model=None, cuda=False, add_output_act=False, restrict_classes=None, normalize=None,
-                 guided_grad_cam=None):
+                 guided_grad_cam=None, resize=None):
         self.img_orig = img.copy()
         self.img = img.copy()
         self.out_img = img.copy()
@@ -23,6 +24,7 @@ class AugmentationImpactAnalyzer():
         self.ggc = guided_grad_cam
         self.show_score = True
         self.out_score = None
+        self.resize = resize
 
     def reset(self, new_img=None):
         self.img_orig = new_img if new_img is not None else self.img_orig
@@ -103,13 +105,21 @@ class AugmentationImpactAnalyzer():
             else:
                 assert 0, f'activation_localization "{activation_localization}" not known'
 
-            self.out_img = arr_to_img(act_loc)
+            out_img = act_loc
         else:
-            self.out_img = transforms.ToPILImage()(min_max_scaler(self.x[0])) # maybe better to cast to numpy and also use arr_to_img here
+            out_img = self.x[0].detach().cpu().permute(1, 2, 0).numpy()
+
+        if ((len(out_img.shape) == 3) and (out_img.shape[2] == 1)):
+            self.out_img = arr_to_img(out_img, 'viridis')
+        else:
+            self.out_img = arr_to_img(out_img)
+
+        if self.resize is not None:
+            self.out_img = self.out_img.reshape(*self.resize)
 
         # then add model activation
         # Note: Here we use a different model as in the activation localization.
-        # We coul use the same model and use reuse model output from forward pass above but it might be add  complexity
+        # We coul use the same model and use reuse model output from forward pass above but it might add unnecessary complexity
         if self.add_output_act:
             out = self.model(self.normalize(self.x)).cpu().detach().numpy()
             if self.restrict_classes is not None:
@@ -139,29 +149,18 @@ class AugmentationImpactAnalyzer():
                 plt.title(self.out_score)
             ax.imshow(self.out_img)
 
-    def combine_activation_with_img(self, img, out):
+    def combine_activation_with_img(self, img, act):
         # to make flatten activation better visible, the images will be streched by a factor of 20
         # and the width is adapted to the original image width
         shape = (20, img.shape[1])
-
         # combine transformed images and their layer activations
-        img_comb = np.vstack([img, arr_to_img(imresize(out, shape), 'inferno')])
+        act = arr_to_img(imresize(act, shape), 'inferno')
+        # to work also with 2D images (e.g. timeseries)
+        img_comb = np.vstack([img, act])
         return img_comb
 
     def create_gif(self, path):
-
-        if self.add_output_act:
-            # to make flatten activation better visible, the images will be streched by a factor of 20 and the width is adapted to the original image width
-            w, h = self.images[0].shape
-            transform_act = lambda x: arr_to_img(imresize(x, (20, w)), 'inferno')
-            # combine sequence of transformed images and their layer activations
-            imgs_combs = [np.vstack([arr_to_img(img).resize((w, h)), transform_act(act)]) for img, act in
-                          zip(self.images, self.activations)]
-            images = [pilImage.fromarray(img) for img in imgs_combs]
-        else:
-            images = self.images
-
         # transform to images, add backward loop and store as gif
-        first_img, *imgs = images
+        first_img, *imgs = self.images
         imgs += [img for img in imgs[::-1]]
         first_img.save(fp=path, format='GIF', append_images=imgs, save_all=True, duration=100, loop=0)
