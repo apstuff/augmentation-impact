@@ -105,7 +105,7 @@ class AugmentationImpactAnalyzer():
 
             self.out_img = arr_to_img(act_loc)
         else:
-            self.out_img = transforms.ToPILImage()(self.x[0])
+            self.out_img = transforms.ToPILImage()(min_max_scaler(self.x[0])) # maybe better to cast to numpy and also use arr_to_img here
 
         # then add model activation
         # Note: Here we use a different model as in the activation localization.
