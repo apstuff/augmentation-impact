@@ -24,7 +24,7 @@ dependencies:
     - graphviz
     - ipywidgets
     - fastbook
-    - voila
+    - voila==0.2.4
     - azure-cognitiveservices-search-imagesearch
     - sentencepiece
     - googledrivedownloader
