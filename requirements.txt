@@ -1,0 +1,6 @@
+https://download.pytorch.org/whl/cpu/torch-1.7.0%2Bcpu-cp36-cp36m-linux_x86_64.whl
+https://download.pytorch.org/whl/cpu/torchvision-0.8.1%2Bcpu-cp36-cp36m-linux_x86_64.whl
+fastai
+fastbook==0.0.14
+voila==0.2.4
+ipywidgets==7.5.1
