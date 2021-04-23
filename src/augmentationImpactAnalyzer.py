@@ -7,7 +7,7 @@ from src.utils import *
 
 class AugmentationImpactAnalyzer():
     def __init__(self, img, model=None, cuda=False, add_output_act=False, restrict_classes=None, normalize=None,
-                 guided_grad_cam=None, resize=None):
+                 guided_grad_cam=None, resize=None, target_idx=None):
         self.img_orig = img.copy()
         self.img = img.copy()
         self.out_img = img.copy()
@@ -25,6 +25,7 @@ class AugmentationImpactAnalyzer():
         self.show_score = True
         self.out_score = None
         self.resize = resize
+        self.target_idx = target_idx
 
     def reset(self, new_img=None):
         self.img_orig = new_img if new_img is not None else self.img_orig
@@ -137,7 +138,7 @@ class AugmentationImpactAnalyzer():
         self.images.append(self.out_img)
 
         if show:
-            fig, ax = plt.subplots()
+            fig, ax = plt.subplots(figsize=(9, 9))
             if self.restrict_classes is not None:
                 my_xticks = self.restrict_classes.values()
                 nr_classes = len(self.restrict_classes)
@@ -148,6 +149,11 @@ class AugmentationImpactAnalyzer():
             if self.show_score:
                 plt.title(self.out_score)
             ax.imshow(self.out_img)
+
+    def set_settings(self, **args):
+        for k, v in args.items():
+            if k == 'target_idx':
+                self.target_idx = v
 
     def combine_activation_with_img(self, img, act):
         # to make flatten activation better visible, the images will be streched by a factor of 20
