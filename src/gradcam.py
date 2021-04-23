@@ -113,10 +113,8 @@ class GradCam(nn.Module):
         for i, w in enumerate(feature_impact):
             cam += w * feature_activation[i, :, :]
 
-        cam = np.maximum(cam, 0)
+        cam = min_max_scaler(cam)
         cam = imresize(cam, input.shape[2:])
-        cam = cam - np.min(cam)
-        cam = cam / np.max(cam)
         return cam
 
     def get_heatmap(self, x, target_index=None):

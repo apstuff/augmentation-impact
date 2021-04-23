@@ -19,9 +19,12 @@ def arr_to_img(img, cmap=None):
     if type(img) == pilImage.Image:
         pass
     else:
+        if (len(img.shape) == 3) and (img.shape[2] == 1):
+            img = img[:,:,0]
         if cmap is not None:
             cm = plt.get_cmap(cmap)
             img = cm(img)[:,:,:3]
+
         img = pilImage.fromarray((min_max_scaler(img)*255).astype('uint8'))
     return img
 
