@@ -96,13 +96,13 @@ class AugmentationImpactAnalyzer():
                 assert 0, "Please provide a guided_grad_cam model first"
             x_input = self.normalize(self.x).requires_grad_(True)
             if activation_localization == 'gradcam':
-                heatmap = self.ggc.grad_cam.get_heatmap(x_input)
+                heatmap = self.ggc.grad_cam.get_heatmap(x_input, self.target_idx)
                 # need to renormalize the image before adding it to another image
                 act_loc = tensor_to_np_img(min_max_scaler(self.x[0].detach())) + np.float32(heatmap)
             elif activation_localization == 'guided-gradient':
-                act_loc = self.ggc.gb_model.get_gradient_act(x_input)
+                act_loc = self.ggc.gb_model.get_gradient_act(x_input, self.target_idx)
             elif activation_localization == 'guided-gradcam':
-                _, _, act_loc = self.ggc(x_input)
+                _, _, act_loc = self.ggc(x_input, self.target_idx)
             else:
                 assert 0, f'activation_localization "{activation_localization}" not known'
 
